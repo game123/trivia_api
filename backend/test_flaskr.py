@@ -43,6 +43,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertTrue(data['categories'])
 
+    def test_404_sent_requesting_non_existing_category(self):
+        res = self.client().get('/categories/9999')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'Not Found')
+
     def test_get_questions(self):
         """ test of gettng first page of questions """
         res = self.client().get('/questions?page=1')
@@ -77,6 +85,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['deleted'], old_question_id)
         self.assertEqual(question, None)
 
+    def test_422_sent_deleting_non_existing_question(self):
+        res = self.client().delete('/questions/ a test')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'Not Found')
+
     def test_add_question(self):
         """Test POST a new question """
 
@@ -95,6 +111,19 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["success"], True)
         self.assertEqual(total_questions_after, total_questions_before + 1)
 
+    def test_422_add_question(self):
+        new_question = {
+            'question': 'A question',
+            'answer': 'A new answer',
+            'category': 1
+        }
+        res = self.client().post('/questions', json=new_question)
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "Unprocessable")
+
     def test_search_questions(self):
         """Test POST to search a question with an existing search term. """
 
@@ -106,6 +135,17 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
         self.assertIsNotNone(data['questions'])
         self.assertIsNotNone(data['total_questions'])
+
+    def test_404_search_question(self):
+        new_search = {
+            'search bot': '',
+        }
+        res = self.client().post('/questions/search', json=new_search)
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "Not Found")
 
     def test_play_quiz_with_category(self):
         """Test /quizzes succesfully with given category """
@@ -122,9 +162,17 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertTrue(data['success'])
         self.assertTrue(data['question']['question'])
-        #  Check if returned question is NOT in previous question
         self.assertTrue(data['question']['id']
                         not in json_play_quizz['previous_questions'])
+
+    def test_404_play_quiz(self):
+        new_quiz_round = {'previous_questions': []}
+        res = self.client().post('/quizzes', json=new_quiz_round)
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "Unprocessable")
 
 
 # Make the tests conveniently executable

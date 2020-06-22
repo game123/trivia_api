@@ -287,6 +287,7 @@ def create_app(test_config=None):
     @app.errorhandler(404)
     def not_found(error):
         return jsonify({
+            'success': False,
             'error': 404,
             'message': 'Not Found'
         }), 404
@@ -294,6 +295,7 @@ def create_app(test_config=None):
     @app.errorhandler(422)
     def unprocessable(error):
         return jsonify({
+            'success': False,
             'error': 422,
             'message': 'Unprocessable'
         }), 422
@@ -301,6 +303,7 @@ def create_app(test_config=None):
     @app.errorhandler(400)
     def bad_request(error):
         return jsonify({
+            'success': False,
             'error': 400,
             'message': 'Bad Request'
         }), 400
@@ -308,6 +311,7 @@ def create_app(test_config=None):
     @app.errorhandler(500)
     def sever_error(error):
         return jsonify({
+            'success': False,
             'error': 500,
             'message': 'Sever Error'
         }), 500
