@@ -51,7 +51,7 @@ def create_app(test_config=None):
   '''
     @app.route('/categories', methods=['GET'])
     def get_categories():
-        categories = Category.query.order_by(Category.type).all()
+        categories = Category.query.order_by(Category.id).all()
 
         if len(categories) == 0:
             abort(404)
@@ -244,28 +244,109 @@ def create_app(test_config=None):
         """
         Play quiz by returning a new random question
         """
+        body = request.get_json()
+
+        previous_questions = body.get('previous_questions', None)
+        quiz_category = body.get('quiz_category', None)
+        quiz_id = int(quiz_category['id'])
+        if quiz_id > 0:
+            quiz_id += 1
+        elif quiz_id == 0 and quiz_category['type'] == 'Art':
+            quiz_id = 1
+        print("quiz_id", quiz_id)
+        print(quiz_category)
+
         try:
-            body = request.get_json()
-            if not ('quiz_category' in body and 'previous_questions' in body):
-                abort(422)
-            category = body.get('quiz_category')
-            previous_questions = body.get('previous_questions')
-
-            if category['type'] == 'click':
-                new_question = Question.query.filter(
-                    Question.id.notin_((previous_questions))
-                ).all()
+            if quiz_category:
+                # Collection questions in selected category that aren't in previous questions list
+                questions = Question.query.filter_by(category=str(quiz_id)).filter(
+                    Question.id.notin_(previous_questions)).all()
             else:
-                new_question = Question.query.filter_by(
-                    category=category['id']
-                ).filter(Question.id.notin_((previous_questions))).all()
+                question = Question.query.filter(
+                    Question.id.notin_(previous_questions)).all()
 
-            return jsonify({
-                'success': True,
-                'question': random.choice(new_question).format() if new_question else None,
-            })
+            if len(questions) > 0:
+                question = random.choice(questions).format()
+
+                result = {
+                    'success': True,
+                    'question': question
+                }
+
+            else:
+                result = {
+                    'success': True,
+                    'question': None
+                }
+
+            return jsonify(result)
+
         except:
             abort(422)
+
+        # if not body:
+        #     # If no JSON Body was given, raise error.
+        #     abort(400, {
+        #           'message': 'Please provide a JSON body with previous question Ids and optional category.'})
+
+        # # Get paramters from JSON Body.
+        # previous_questions = body.get('previous_questions', None)
+        # current_category = body.get('quiz_category', None)
+
+        # if not previous_questions:
+        #     if current_category:
+        #         # if no list with previous questions is given, but a category , just gut any question from this category.
+        #         questions_raw = (Question.query
+        #                          .filter(Question.category == str(current_category['id']))
+        #                          .all())
+        #     else:
+        #         # if no list with previous questions is given and also no category , just gut any question.
+        #         questions_raw = (Question.query.all())
+        # else:
+        #     if current_category:
+        #         # if a list with previous questions is given and also a category, query for questions which are not contained in previous question and are in given category
+        #         questions_raw = (Question.query
+        #                          .filter(Question.category == str(current_category['id']))
+        #                          .filter(Question.id.notin_(previous_questions))
+        #                          .all())
+        #     else:
+        #         # # if a list with previous questions is given but no category, query for questions which are not contained in previous question.
+        #         questions_raw = (Question.query
+        #                          .filter(Question.id.notin_(previous_questions))
+        #                          .all())
+        # # Format questions & get a random question
+        # questions_formatted = [question.format() for question in questions_raw]
+        # random_question = questions_formatted[random.randint(
+        #     0, len(questions_formatted)-1)]
+
+        # return jsonify({
+        #     'success': True,
+        #     'question': random_question
+        # })
+        # Solution 2
+    # previous_questions = body.get('previous_questions', [])
+    # quiz_category = body.get('quiz_category', None)
+
+    # try:
+    #     if quiz_category:
+    #         if quiz_category['id'] == 0:
+    #             selections = Question.query.all()
+    #         else:
+    #             selections = Question.query.filter_by(
+    #                 category=quiz_category['id']).all()
+
+    #     options = [q.format()
+    #                for q in selections if q.id not in previous_questions]
+    #     if len(options) == 0:
+    #         return jsonify({
+    #             'question': False
+    #         })
+    #     result = random.choice(options)
+    #     return jsonify({
+    #         'question': result
+    #     })
+    # except:
+    #     abort(500)
 
     ''' 
   Create error handlers for all expected errors 
