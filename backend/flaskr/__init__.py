@@ -285,4 +285,18 @@ def create_app(test_config=None):
             'message': 'Unprocessable'
         }), 422
 
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify({
+            'error': 400,
+            'message': 'Bad Request'
+        }), 400
+
+    @app.errorhandler(500)
+    def sever_error(error):
+        return jsonify({
+            'error': 500,
+            'message': 'Sever Error'
+        }), 500
+
     return app
