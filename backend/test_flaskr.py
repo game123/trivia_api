@@ -36,6 +36,7 @@ class TriviaTestCase(unittest.TestCase):
     """
 
     def test_get_categories(self):
+        """ Test getting a category list """
         res = self.client().get('/categories')
         data = json.loads(res.data)
 
@@ -43,6 +44,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data['categories'])
 
     def test_get_questions(self):
+        """ test of gettng first page of questions """
         res = self.client().get('/questions?page=1')
         data = json.loads(res.data)
 
@@ -51,6 +53,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(len(data['questions']))
 
     def test_404_sent_requesting_questions_beyond_valid_page(self):
+        """ test 404 if sent request questions beyond valid page """
         res = self.client().get('/questions?page=10000')
         data = json.loads(res.data)
 
@@ -58,7 +61,8 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['message'], 'resource not found')
 
     def test_delete_question(self):
-        question = Question(question='new question', answer='new answer',
+        """ Test delete a question """
+        question = Question(question='May I delete you', answer='yes, of course',
                             difficulty=1, category="1")
         question.insert()
         old_question_id = question.id
@@ -74,8 +78,10 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(question, None)
 
     def test_add_question(self):
+        """Test POST a new question """
+
         new_question = {
-            'question': 'new_question',
+            'question': 'Can I add a new_question',
             'answer': 'new_answer',
             'difficulty': 1,
             'category': "1"
@@ -90,6 +96,8 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(total_questions_after, total_questions_before + 1)
 
     def test_search_questions(self):
+        """Test POST to search a question with an existing search term. """
+
         new_search = {'searchTerm': 'friends'}
         res = self.client().post('/questions/search', json=new_search)
         data = json.loads(res.data)
@@ -98,6 +106,25 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
         self.assertIsNotNone(data['questions'])
         self.assertIsNotNone(data['total_questions'])
+
+    def test_play_quiz_with_category(self):
+        """Test /quizzes succesfully with given category """
+        json_play_quizz = {
+            'previous_questions': [1, 2, 5],
+            'quiz_category': {
+                'type': 'Science',
+                'id': '1'
+            }
+        }
+        res = self.client().post('/quizzes', json=json_play_quizz)
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(data['success'])
+        self.assertTrue(data['question']['question'])
+        #  Check if returned question is NOT in previous question
+        self.assertTrue(data['question']['id']
+                        not in json_play_quizz['previous_questions'])
 
 
 # Make the tests conveniently executable

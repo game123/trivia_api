@@ -10,6 +10,10 @@ QUESTIONS_PER_PAGE = 10
 
 
 def paginate_questions(request, selection):
+    '''
+    Paginates and formats questions 
+    '''
+
     page = request.args.get('page', 1, type=int)
     start = (page - 1) * QUESTIONS_PER_PAGE
     end = start + QUESTIONS_PER_PAGE
@@ -70,7 +74,9 @@ def create_app(test_config=None):
   '''
     @app.route('/questions', methods=['GET'])
     def get_questions():
-        #  = request.args.get('page', 1, type=int)
+        '''
+        Return paginated questions
+        '''
 
         q_set = Question.query.order_by(Question.id).all()
         current_questions = paginate_questions(request, q_set)
@@ -131,6 +137,9 @@ def create_app(test_config=None):
 
     @app.route("/questions", methods=['POST'])
     def add_question():
+        '''
+          Add question
+        '''
         body = request.get_json()
 
         if not ('question' in body and 'answer' in body and
@@ -164,6 +173,9 @@ def create_app(test_config=None):
   '''
     @app.route('/questions/search', methods=['POST'])
     def search_questions():
+        '''
+          Search questions by key words
+        '''
         body = request.get_json()
         search = body.get('searchTerm', None)
         try:
@@ -194,10 +206,14 @@ def create_app(test_config=None):
   '''
     @app.route('/categories/<int:category_id>/questions')
     def get_questions_by_category(category_id):
+        '''
+          Get questions by category id
+        '''
         try:
 
-            questions = Question.query.order_by(
-                Question.id).filter_by(category=category_id+1)
+            questions = Question.query.order_by(Question.id).filter(
+                Question.category == str(category_id+1)
+            ).all()
             current_category = [q.category for q in questions]
 
             if len(questions) == 0:
@@ -205,9 +221,9 @@ def create_app(test_config=None):
 
             return jsonify({
                 'success': True,
-                'questions': [q.format() for q in questions.all()],
-                'total_questions': len(questions.all()),
-                'current_category': current_category
+                'questions': [question.format() for question in questions],
+                'total_questions': len(questions),
+                'current_category': category_id+1
             })
 
         except:
@@ -225,6 +241,9 @@ def create_app(test_config=None):
   '''
     @app.route('/quizzes', methods=['POST'])
     def play_quiz():
+        """
+        Play quiz by returning a new random question
+        """
         try:
             body = request.get_json()
             if not ('quiz_category' in body and 'previous_questions' in body):
