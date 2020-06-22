@@ -40,7 +40,7 @@ class Question(db.Model):
     def __init__(self, question, answer, category, difficulty):
         self.question = question
         self.answer = answer
-        self.category = str(int(category) + 1)
+        self.category = category
         self.difficulty = difficulty
 
     def insert(self):

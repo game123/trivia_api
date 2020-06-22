@@ -58,7 +58,7 @@ def create_app(test_config=None):
 
         return jsonify({
             'success': True,
-            'categories': [category.type for category in categories],
+            'categories': {category.id: category.type for category in categories},
         })
 
     '''
@@ -93,7 +93,7 @@ def create_app(test_config=None):
             'success': True,
             'questions': current_questions,
             'total_questions': len(q_set),
-            'categories': [c.type for c in categories],
+            'categories': {c.id: c.type for c in categories},
             'current_category': None
         })
 
@@ -212,7 +212,7 @@ def create_app(test_config=None):
         try:
 
             questions = Question.query.order_by(Question.id).filter(
-                Question.category == str(category_id+1)
+                Question.category == str(category_id)
             ).all()
             current_category = [q.category for q in questions]
 
@@ -223,7 +223,7 @@ def create_app(test_config=None):
                 'success': True,
                 'questions': [question.format() for question in questions],
                 'total_questions': len(questions),
-                'current_category': category_id+1
+                'current_category': category_id
             })
 
         except:
@@ -248,22 +248,18 @@ def create_app(test_config=None):
 
         previous_questions = body.get('previous_questions', None)
         quiz_category = body.get('quiz_category', None)
-        quiz_id = int(quiz_category['id'])
-        if quiz_id > 0:
-            quiz_id += 1
-        elif quiz_id == 0 and quiz_category['type'] == 'Art':
-            quiz_id = 1
-        print("quiz_id", quiz_id)
-        print(quiz_category)
 
         try:
-            if quiz_category:
+            if quiz_category['type'] == 'click':
                 # Collection questions in selected category that aren't in previous questions list
-                questions = Question.query.filter_by(category=str(quiz_id)).filter(
-                    Question.id.notin_(previous_questions)).all()
+
+                questions = Question.query.filter(
+                    Question.id.notin_((previous_questions))).all()
+
             else:
-                question = Question.query.filter(
-                    Question.id.notin_(previous_questions)).all()
+
+                questions = Question.query.filter_by(category=quiz_category['id']).filter(
+                    Question.id.notin_((previous_questions))).all()
 
             if len(questions) > 0:
                 question = random.choice(questions).format()
